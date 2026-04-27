@@ -17,14 +17,20 @@ function Records() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [paginationMode, setPaginationMode] = useState('infinite'); // 'infinite' or 'traditional'
   const observerTarget = useRef(null);
   const isInInitialMount = useRef(true);
   const searchTimeout = useRef(null);
 
   const handleLoadRecords = async (page = 1, append = false) => {
     // feat: load the data from the database (number 5)
-    if (append) {
-      setIsLoadingMore(true);
+    // In traditional pagination mode, always load fresh data
+    if (paginationMode === 'traditional' || append) {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
     } else {
       setIsLoading(true);
     }
@@ -40,8 +46,15 @@ function Records() {
       const payload = response.data?.data ?? response.data;
       const list = Array.isArray(payload) ? payload : [];
 
-      setRecords((prev) => (append ? [...prev, ...list] : list));
-      setHasMore(list.length === 20);
+      if (paginationMode === 'traditional') {
+        // Traditional pagination: replace records
+        setRecords(list);
+        setHasMore(false); // Not used in traditional pagination
+      } else {
+        // Infinite scroll: append records
+        setRecords((prev) => (append ? [...prev, ...list] : list));
+        setHasMore(list.length === 20);
+      }
     } catch (error) {
       console.error(error);
       toast.error(error?.message || 'Unable to load records.');
@@ -122,6 +135,18 @@ function Records() {
       toast.error("Error encountered while deleting record.");
     }
   }
+
+  // ui: implement pagination in the plants table (number 10)
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    handleLoadRecords(page, false);
+  }
+
+  const togglePaginationMode = () => {
+    setPaginationMode(prev => prev === 'infinite' ? 'traditional' : 'infinite');
+    setCurrentPage(1);
+    handleLoadRecords(1, false);
+  }
   const filteredRecords = searchTerm.trim() ? records : records.filter(record =>
     record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.variety?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,6 +167,8 @@ function Records() {
   }, []);
   // feat: load paginated data loading (number 6) - intersection observer for infinite scroll
   useEffect(() => {
+    if (paginationMode !== 'infinite') return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -163,7 +190,7 @@ function Records() {
         observer.unobserve(currentTarget);
       }
     }
-  }, [loadMore]);
+  }, [loadMore, paginationMode]);
   // reset pagination when searching
   useEffect(() => {
     if (isInInitialMount.current) {
@@ -220,7 +247,6 @@ function Records() {
       </div>
 
       {/* Records Table */}
-      {/* TODO implement pagination plants table */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
           <table className="relative w-full">
@@ -275,9 +301,9 @@ function Records() {
                         </tr>
                       ))}
 
-                      {/* loading more indicator */}
+                      {/* loading more indicator - only in infinite scroll mode */}
                       {
-                        isLoadingMore && (
+                        paginationMode === 'infinite' && isLoadingMore && (
                           <tr>
                             <td colSpan={8} className='py-6'>
                               <PlantLoading size='lg' variant='pulse' text="Loading more records..." />
@@ -285,9 +311,9 @@ function Records() {
                           </tr>
                         )
                       }
-                      {/* intersection observer target */}
+                      {/* intersection observer target - only in infinite scroll mode */}
                       {
-                        !searchTerm && hasMore && !isLoadingMore && (
+                        paginationMode === 'infinite' && !searchTerm && hasMore && !isLoadingMore && (
                           <tr ref={observerTarget}>
                             <td colSpan={8} className='py-4 text-center text-gray-400 text-sm'>
                               Scroll for more...
@@ -309,12 +335,47 @@ function Records() {
           </div>
         )}
 
-        {/* End of Records Indicator */}
-        {!hasMore && records.length > 0 && !searchTerm && (
+        {/* End of Records Indicator - only in infinite scroll mode */}
+        {paginationMode === 'infinite' && !hasMore && records.length > 0 && !searchTerm && (
           <div className="text-center py-4 text-gray-400 text-sm border-t border-gray-100">
             No more records to load
           </div>
         )}
+      </div>
+
+      {/* Pagination Controls */}
+      {paginationMode === 'traditional' && records.length > 0 && !searchTerm && (
+        <div className="flex items-center justify-between mt-4 px-4 py-3 bg-white border border-gray-200 rounded-lg">
+          <div className="text-sm text-gray-700">
+            Showing page {currentPage}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={records.length < 20 || isLoading}
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination Mode Toggle */}
+      <div className="flex justify-center mt-4">
+        <button
+          onClick={togglePaginationMode}
+          className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          Switch to {paginationMode === 'infinite' ? 'Traditional' : 'Infinite Scroll'} Pagination
+        </button>
       </div>
 
       {/* Modal */}
