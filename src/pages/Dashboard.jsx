@@ -1,28 +1,69 @@
 import { useEffect, useState } from "react";
 import { FaLeaf, FaUsers, FaBoxOpen, FaChartLine } from "react-icons/fa";
-import axios from "axios";
+import { api } from "../api";
 
 function Dashboard() {
  
   const [plants, setPlants] = useState([]);
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Total Plants",
-      value: "156",
+      value: "0",
       icon: FaLeaf,
       color: "bg-green-100 text-green-600",
     },
     {
       title: "Estimated Counts",
-      value: "1,234",
+      value: "0",
       icon: FaUsers,
       color: "bg-blue-100 text-blue-600",
     }
-  ];
+  ]);
 
 
   useEffect(() => {
-    // TODO fetch plants data from server
+    // feat: fetch plants data from server
+    const fetchPlantsData = async () => {
+      try {
+        const response = await api.get('plants', {
+          params: {
+            page: 1,
+            per_page: 50, // Get more plants for dashboard
+          },
+        });
+
+        const payload = response.data?.data ?? response.data;
+        const plantsList = Array.isArray(payload) ? payload : [];
+        
+        setPlants(plantsList);
+
+        // Calculate stats from the data
+        const totalPlants = plantsList.length;
+        const totalEstimatedCount = plantsList.reduce((sum, plant) => {
+          return sum + (parseInt(plant.seedling_count) || 0);
+        }, 0);
+
+        setStats([
+          {
+            title: "Total Plants",
+            value: totalPlants.toString(),
+            icon: FaLeaf,
+            color: "bg-green-100 text-green-600",
+          },
+          {
+            title: "Estimated Counts",
+            value: totalEstimatedCount.toLocaleString(),
+            icon: FaUsers,
+            color: "bg-blue-100 text-blue-600",
+          }
+        ]);
+      } catch (error) {
+        console.error('Error fetching plants data:', error);
+        // Keep default stats on error
+      }
+    };
+
+    fetchPlantsData();
   }, []);
 
   return (
