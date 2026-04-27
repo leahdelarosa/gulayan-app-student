@@ -21,8 +21,31 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    //TODO make the login process functional
+    setIsLoading(true)
 
+    try {
+      // feat: make the login process functional
+      const response = await api.post('login', {
+        email: formData.email,
+        password: formData.password,
+      })
+
+      // Store the token
+      const token = response.data?.token || response.data?.access_token
+      if (token) {
+        localStorage.setItem('token', token)
+        // Redirect to dashboard on successful login
+        navigate('/dashboard')
+      } else {
+        throw new Error('No token received')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      // Handle login errors (you might want to show a toast or error message)
+      alert(error?.message || 'Login failed. Please check your credentials.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
