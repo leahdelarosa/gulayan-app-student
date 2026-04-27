@@ -7,7 +7,6 @@ import { api } from '../api';
 import { toast } from 'sonner';
 
 function Records() {
-  //TODO: add loading icon while ongoing ang loading ng records.
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,12 +20,33 @@ function Records() {
   const observerTarget = useRef(null);
   const isInInitialMount = useRef(true);
 
-  const handleSearchPlants = async () => {
-    // TODO search from the the backend; in case that all records is not yet loaded
-  }
   const handleLoadRecords = async (page = 1, append = false) => {
-    //TODO: load the data from the database
-    //TODO: implement paginated data loading
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await api.get('plants', {
+        params: {
+          page,
+          per_page: 20,
+        },
+      });
+
+      const payload = response.data?.data ?? response.data;
+      const list = Array.isArray(payload) ? payload : [];
+
+      setRecords((prev) => (append ? [...prev, ...list] : list));
+      setHasMore(list.length === 20);
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || 'Unable to load records.');
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
   }
   const handleAddRecord = async (formData) => {
     try {
