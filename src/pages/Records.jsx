@@ -96,8 +96,11 @@ function Records() {
   }
   const handleUpdateRecord = async (data) => {
     try {
-      //TODO make update record functional
+      // feat: make update record functional (number 8)
+      await api.put(`plants/${data.id}`, data);
       toast.success("Plant data updated.");
+      // Reload records to show the updated entry
+      handleLoadRecords(1, false);
     } catch (error) {
       console.error(error);
       toast.error("Error encountered during update.");
