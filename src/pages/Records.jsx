@@ -121,6 +121,7 @@ function Records() {
     record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const loadMore = useCallback(() => {
+    // feat: load paginated data loading (number 6)
     if (!isLoadingMore && hasMore && !searchTerm) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
@@ -132,7 +133,7 @@ function Records() {
   useEffect(() => {
     handleLoadRecords(1, false);
   }, []);
-  // intersection observer for infine scroll
+  // feat: load paginated data loading (number 6) - intersection observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
