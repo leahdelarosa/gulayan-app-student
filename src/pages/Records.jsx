@@ -19,6 +19,7 @@ function Records() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const observerTarget = useRef(null);
   const isInInitialMount = useRef(true);
+  const searchTimeout = useRef(null);
 
   const handleLoadRecords = async (page = 1, append = false) => {
     //pagination
@@ -47,6 +48,36 @@ function Records() {
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
+    }
+  }
+
+  const handleSearchPlants = async (query) => {
+    if (!query.trim()) {
+      setRecords([]);
+      setHasMore(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await api.get('plants', {
+        params: {
+          search: query.trim(),
+          page: 1,
+          per_page: 20,
+        },
+      });
+
+      const payload = response.data?.data ?? response.data;
+      const list = Array.isArray(payload) ? payload : [];
+
+      setRecords(list);
+      setHasMore(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || 'Unable to search records.');
+    } finally {
+      setIsLoading(false);
     }
   }
   const handleAddRecord = async (formData) => {
@@ -84,7 +115,7 @@ function Records() {
       toast.error("Error encountered while deleting record.");
     }
   }
-  const filteredRecords = records.filter(record =>
+  const filteredRecords = searchTerm.trim() ? records : records.filter(record =>
     record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.variety?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -131,14 +162,24 @@ function Records() {
       isInInitialMount.current = false;
       return;
     }
-    if (searchTerm) {
-      setCurrentPage(1);
-      setHasMore(false);
-    } else {
-      setCurrentPage(1);
-      setHasMore(true);
-      handleLoadRecords(1, false);
+
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
     }
+
+    searchTimeout.current = setTimeout(() => {
+      if (searchTerm.trim()) {
+        handleSearchPlants(searchTerm);
+      } else {
+        handleLoadRecords(1, false);
+      }
+    }, 350);
+
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
   }, [searchTerm]);
 
   return (
