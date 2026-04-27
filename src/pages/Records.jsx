@@ -110,6 +110,7 @@ function Records() {
   }
   const handleDeleteRecord = async (data) => {
     try {
+      // feat: make delete record functional (number 9)
       const isDelete = confirm("Are you sure you want to delete this record?");
       if (isDelete) {
         await api.delete(`plants/${data.id}`, data);
