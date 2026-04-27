@@ -21,6 +21,7 @@ function Records() {
   const isInInitialMount = useRef(true);
 
   const handleLoadRecords = async (page = 1, append = false) => {
+    //pagination
     if (append) {
       setIsLoadingMore(true);
     } else {
