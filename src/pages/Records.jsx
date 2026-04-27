@@ -22,7 +22,7 @@ function Records() {
   const searchTimeout = useRef(null);
 
   const handleLoadRecords = async (page = 1, append = false) => {
-    //pagination
+    // feat: load the data from the database (number 5)
     if (append) {
       setIsLoadingMore(true);
     } else {
@@ -82,8 +82,11 @@ function Records() {
   }
   const handleAddRecord = async (formData) => {
     try {
-      //TODO: make add new record functional
+      // feat: make add new record functional (number 7)
+      await api.post('plants', formData);
       toast.success("New record saved.");
+      // Reload records to show the new entry
+      handleLoadRecords(1, false);
     } catch (error) {
       console.error(error);
       toast.error("Error encountered while saving record.");
@@ -121,6 +124,7 @@ function Records() {
     record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const loadMore = useCallback(() => {
+    // feat: load paginated data loading (number 6)
     if (!isLoadingMore && hasMore && !searchTerm) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
@@ -132,7 +136,7 @@ function Records() {
   useEffect(() => {
     handleLoadRecords(1, false);
   }, []);
-  // intersection observer for infine scroll
+  // feat: load paginated data loading (number 6) - intersection observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
