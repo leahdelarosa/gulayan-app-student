@@ -22,7 +22,7 @@ function Records() {
   const searchTimeout = useRef(null);
 
   const handleLoadRecords = async (page = 1, append = false) => {
-    //pagination
+    // feat: load the data from the database (number 5)
     if (append) {
       setIsLoadingMore(true);
     } else {
