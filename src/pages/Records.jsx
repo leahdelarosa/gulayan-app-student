@@ -82,8 +82,11 @@ function Records() {
   }
   const handleAddRecord = async (formData) => {
     try {
-      //TODO: make add new record functional
+      // feat: make add new record functional (number 7)
+      await api.post('plants', formData);
       toast.success("New record saved.");
+      // Reload records to show the new entry
+      handleLoadRecords(1, false);
     } catch (error) {
       console.error(error);
       toast.error("Error encountered while saving record.");
